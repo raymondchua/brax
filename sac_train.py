@@ -286,8 +286,13 @@ train_fn = {
     ),
 }[env_name]
 
+def progress(num_steps, metrics):
+    for key, value in metrics.items():
+        print(f"{key}: {value}")
+    # Optionally, you can add logic to save or visualize metrics here.
+
 # Train
-make_inference_fn, params, metrics = train_fn(environment=env)
+make_inference_fn, params, metrics = train_fn(environment=env, progress_fn=progress)
 
 for k,v in metrics.items():
     print(f"{k}: {v}")
