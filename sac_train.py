@@ -224,6 +224,8 @@ times = [datetime.now()]
 
 
 def progress(num_steps, metrics):
+    for key, value in metrics.items():
+        print(f"{key}: {value}")
     times.append(datetime.now())
     xdata.append(num_steps)
     ydata.append(metrics["eval/episode_reward"])

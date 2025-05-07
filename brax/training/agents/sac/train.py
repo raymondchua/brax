@@ -315,9 +315,6 @@ def train(
             "alpha": jnp.exp(alpha_params),
         }
 
-        for k,v in metrics.items():
-            print(f"{k}: {v}")
-
         new_training_state = TrainingState(
             policy_optimizer_state=policy_optimizer_state,
             policy_params=policy_params,
