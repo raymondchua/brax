@@ -66,6 +66,7 @@ class TrainingState:
     alpha_optimizer_state: optax.OptState
     alpha_params: Params
     normalizer_params: running_statistics.RunningStatisticsState
+    episodes_done: types.UInt64
 
 
 def _unpmap(v):
@@ -106,6 +107,7 @@ def _init_training_state(
         alpha_optimizer_state=alpha_optimizer_state,
         alpha_params=log_alpha,
         normalizer_params=normalizer_params,
+        episodes_done=types.UInt64(hi=0, lo=0),
     )
     return jax.device_put_replicated(
         training_state, jax.local_devices()[:local_devices_to_use]
@@ -302,22 +304,22 @@ def train(
             optimizer_state=training_state.policy_optimizer_state,
         )
 
+        episodes_done_increment = jnp.sum(
+            jnp.asarray(transitions.extras["state_extras"]["truncation"], dtype=jnp.uint64)
+        )
+
         new_target_q_params = jax.tree_util.tree_map(
             lambda x, y: x * (1 - tau) + y * tau,
             training_state.target_q_params,
             q_params,
         )
 
-        print("episodes_done: ", transitions.extras["state_extras"]["truncation"])
-
         metrics = {
             "critic_loss": critic_loss,
             "actor_loss": actor_loss,
             "alpha_loss": alpha_loss,
             "alpha": jnp.exp(alpha_params),
-            "env_steps": training_state.env_steps.lo + (training_state.env_steps.hi * 2**32),
-            "gradient_steps": training_state.gradient_steps.lo + (training_state.gradient_steps.hi * 2**32) ,
-            "episodes_done": jnp.sum(transitions.extras["state_extras"]["truncation"]),
+            "episodes_done": training_state.episodes_done,
         }
 
         new_training_state = TrainingState(
@@ -331,6 +333,8 @@ def train(
             alpha_optimizer_state=alpha_optimizer_state,
             alpha_params=alpha_params,
             normalizer_params=training_state.normalizer_params,
+            episodes_done=training_state.episodes_done + episodes_done_increment,
+
         )
         return (new_training_state, key), metrics
 

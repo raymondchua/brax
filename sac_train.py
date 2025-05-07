@@ -287,6 +287,7 @@ train_fn = {
 }[env_name]
 
 def progress(num_steps, metrics):
+    print("Steps:", num_steps)
     for key, value in metrics.items():
         print(f"{key}: {value}")
     # Optionally, you can add logic to save or visualize metrics here.
