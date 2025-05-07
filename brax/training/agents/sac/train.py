@@ -315,8 +315,8 @@ def train(
             "actor_loss": actor_loss,
             "alpha_loss": alpha_loss,
             "alpha": jnp.exp(alpha_params),
-            "env_steps": int(training_state.env_steps),
-            "gradient_steps": int(training_state.gradient_steps),
+            "env_steps": int(training_state.env_steps.hi) * (2**32) + int(training_state.env_steps.lo),
+            "gradient_steps": int(training_state.gradient_steps.hi) * (2**32) + int(training_state.gradient_steps.lo),
             "episodes_done": jnp.sum(transitions.extras["state_extras"]["truncation"]),
         }
 
