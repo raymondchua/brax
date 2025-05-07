@@ -284,22 +284,6 @@ train_fn = {
     ),
 }[env_name]
 
-num_timesteps=7_864_320,
-#         num_evals=20,
-#         reward_scaling=5,
-#         episode_length=1000,
-#         normalize_observations=True,
-#         action_repeat=1,
-#         discounting=0.997,
-#         learning_rate=6e-4,
-#         num_envs=128,
-#         batch_size=128,
-#         grad_updates_per_step=32,
-#         max_devices_per_host=1,
-#         max_replay_size=1048576,
-#         min_replay_size=8192,
-#         seed=1,
-
 # Train
 make_inference_fn, params, metrics = train_fn(environment=env)
 
