@@ -319,9 +319,6 @@ def train(
             "actor_loss": actor_loss,
             "alpha_loss": alpha_loss,
             "alpha": jnp.exp(alpha_params),
-            "episodes_done": training_state.episodes_done.lo,
-            "env_steps": training_state.env_steps.lo,
-            "gradient_steps": training_state.gradient_steps.lo,
         }
 
         new_training_state = TrainingState(
@@ -588,6 +585,13 @@ def train(
             training_state, env_state, buffer_state, epoch_keys
         )
         current_step = int(_unpmap(training_state.env_steps))
+        training_metrics["training/steps"] = current_step
+        training_metrics["training/gradient_steps"] = int(
+            _unpmap(training_state.gradient_steps)
+        )
+        training_metrics["training/episodes_done"] = int(
+            _unpmap(training_state.episodes_done)
+        )
 
         # Eval and logging
         if process_id == 0:
