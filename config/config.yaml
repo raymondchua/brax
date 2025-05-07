@@ -1,0 +1,30 @@
+# Common parameters
+TIMESTEPS: 7864320
+NUM_EVALS: 20
+REWARD_SCALING: 10
+EPISODE_LENGTH: 1000
+NORMALIZE_OBSERVATIONS: true
+ACTION_REPEAT: 1
+DISCOUNT: 0.997
+LR: 0.0006
+NUM_ENVS: 128
+BATCH_SIZE: 128
+
+# experiment params
+NUM_SEEDS: 1
+SEED: 0
+
+# if  hyperparameters tuning
+HYP_TUNE: False
+LOGGING:
+  MODE: "full_train" # full_train, test, train
+
+# wandb params
+WANDB_MODE: "offline"  # set to online to activate wandb
+ENTITY: ""
+PROJECT: "Brax_CRL"
+alg:
+  WANDB_LOG_ALL_SEEDS: False # will log all the vmapped seeds separetely
+
+# where to save the params (if None, will not save)
+SAVE_PATH: "./models"
