@@ -319,7 +319,9 @@ def train(
             "actor_loss": actor_loss,
             "alpha_loss": alpha_loss,
             "alpha": jnp.exp(alpha_params),
-            "episodes_done": training_state.episodes_done,
+            "episodes_done": training_state.episodes_done.lo,
+            "env_steps": training_state.env_steps.lo,
+            "gradient_steps": training_state.gradient_steps.lo,
         }
 
         new_training_state = TrainingState(
