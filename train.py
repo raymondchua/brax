@@ -276,6 +276,7 @@ def progress(num_steps, metrics):
     for key, value in metrics.items():
         print(f"{key}: {value}")
     # Optionally, you can add logic to save or visualize metrics here.
+    wandb.log(metrics, step=num_steps)
 
 def single_run(config):
     config = {**config, **config["alg"]}
