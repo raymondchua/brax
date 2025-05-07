@@ -268,7 +268,7 @@ state = jax.jit(env.reset)(rng=jax.random.PRNGKey(seed=0))
 train_fn = {
     "ant": functools.partial(
         sac.train,
-        num_timesteps=50_000_000,
+        num_timesteps=7_864_320,
         num_evals=20,
         reward_scaling=10,
         episode_length=1000,
@@ -277,7 +277,7 @@ train_fn = {
         discounting=0.997,
         learning_rate=6e-4,
         num_envs=128,
-        batch_size=256,
+        batch_size=128,
         grad_updates_per_step=32,
         max_devices_per_host=1,
         max_replay_size=1048576,
