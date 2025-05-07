@@ -244,10 +244,11 @@
 # print(f"time to jit: {times[1] - times[0]}")
 # print(f"time to train: {times[-1] - times[1]}")
 
+import functools
 import jax
 import brax
 from brax import envs
-from brax.training import sac
+from brax.training.agents.sac import train as sac
 from brax.training import distribution
 from brax.training import networks
 from brax.training.types import TrainingState
@@ -256,32 +257,35 @@ from flax.training import checkpoints
 import jax.numpy as jnp
 import optax
 
-# Create the Ant environment
-env = envs.create(env_name="ant")
+env_name = "ant"  # @param ['ant', 'halfcheetah', 'hopper', 'humanoid', 'humanoidstandup', 'inverted_pendulum', 'inverted_double_pendulum', 'pusher', 'reacher', 'walker2d']
+backend = "positional"  # @param ['generalized', 'positional', 'spring']
 
-# Wrap it in a vectorized environment for batched training
-train_env = envs.create(env_name="ant", batch_size=64)
+env = envs.get_environment(env_name=env_name, backend=backend)
+state = jax.jit(env.reset)(rng=jax.random.PRNGKey(seed=0))
 
-# Define SAC configuration
-sac_config = sac.SACConfig(
-    num_timesteps=1_000_000,
-    episode_length=1000,
-    action_repeat=1,
-    learning_rate=3e-4,
-    discounting=0.99,
-    seed=42,
-    batch_size=256,
-    tau=0.005,
-    reward_scaling=1.0,
-    entropy_coeff=0.2,
-    normalize_observations=True,
-)
+train_fn = {
+    "ant": functools.partial(
+        sac.train,
+        num_timesteps=50_000_000,
+        num_evals=10,
+        reward_scaling=10,
+        episode_length=1000,
+        normalize_observations=True,
+        action_repeat=1,
+        unroll_length=5,
+        num_minibatches=32,
+        num_updates_per_batch=4,
+        discounting=0.97,
+        learning_rate=3e-4,
+        entropy_cost=1e-2,
+        num_envs=4096,
+        batch_size=2048,
+        seed=1,
+    ),
+}[env_name]
 
 # Train
-inference_fn, params, metrics = sac.train(
-    environment=train_env,
-    config=sac_config
-)
+make_inference_fn, params, metrics = train_fn(environment=env)
 
 for k,v in metrics.items():
     print(f"{k}: {v}")
