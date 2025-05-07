@@ -246,16 +246,18 @@
 
 import functools
 import jax
+import os
+
+from datetime import datetime
+from jax import numpy as jp
+import matplotlib.pyplot as plt
+
 import brax
-from brax import envs
-from brax.training.agents.sac import train as sac
-from brax.training import distribution
-from brax.training import networks
-from brax.training.types import TrainingState
+
 import flax
-from flax.training import checkpoints
-import jax.numpy as jnp
-import optax
+from brax import envs
+from brax.io import model
+from brax.training.agents.sac import train as sac
 
 env_name = "ant"  # @param ['ant', 'halfcheetah', 'hopper', 'humanoid', 'humanoidstandup', 'inverted_pendulum', 'inverted_double_pendulum', 'pusher', 'reacher', 'walker2d']
 backend = "positional"  # @param ['generalized', 'positional', 'spring']
