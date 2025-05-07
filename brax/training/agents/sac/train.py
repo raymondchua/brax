@@ -308,13 +308,15 @@ def train(
             q_params,
         )
 
+        print("episodes_done: ", transitions.extras["state_extras"]["truncation"])
+
         metrics = {
             "critic_loss": critic_loss,
             "actor_loss": actor_loss,
             "alpha_loss": alpha_loss,
             "alpha": jnp.exp(alpha_params),
-            "env_steps": training_state.env_steps,
-            "gradient_steps": training_state.gradient_steps,
+            "env_steps": int(training_state.env_steps),
+            "gradient_steps": int(training_state.gradient_steps),
             "episodes_done": jnp.sum(transitions.extras["state_extras"]["truncation"]),
         }
 
