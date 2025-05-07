@@ -247,12 +247,16 @@
 import functools
 import jax
 import os
+import hydra
+import wandb
 
 from datetime import datetime
 from jax import numpy as jp
 import matplotlib.pyplot as plt
 
 import brax
+import time
+from omegaconf import OmegaConf
 
 import flax
 from brax import envs
@@ -265,26 +269,7 @@ backend = "positional"  # @param ['generalized', 'positional', 'spring']
 env = envs.get_environment(env_name=env_name, backend=backend)
 state = jax.jit(env.reset)(rng=jax.random.PRNGKey(seed=0))
 
-train_fn = {
-    "ant": functools.partial(
-        sac.train,
-        num_timesteps=7_864_320,
-        num_evals=20,
-        reward_scaling=10,
-        episode_length=1000,
-        normalize_observations=True,
-        action_repeat=1,
-        discounting=0.997,
-        learning_rate=6e-4,
-        num_envs=128,
-        batch_size=128,
-        grad_updates_per_step=32,
-        max_devices_per_host=1,
-        max_replay_size=1048576,
-        min_replay_size=8192,
-        seed=1,
-    ),
-}[env_name]
+
 
 def progress(num_steps, metrics):
     print("Steps:", num_steps)
@@ -292,8 +277,60 @@ def progress(num_steps, metrics):
         print(f"{key}: {value}")
     # Optionally, you can add logic to save or visualize metrics here.
 
-# Train
-make_inference_fn, params, metrics = train_fn(environment=env, progress_fn=progress)
+def single_run(config):
+    config = {**config, **config["alg"]}
 
-for k,v in metrics.items():
-    print(f"{k}: {v}")
+    alg_name = config.get("ALG_NAME", "pqn")
+    env_name = config["ENV_NAME"]
+
+    wandb.init(
+        entity=config["ENTITY"],
+        project=config["PROJECT"],
+        tags=[
+            alg_name.upper(),
+            env_name.upper(),
+            f"jax_{jax.__version__}",
+        ],
+        name=config.get("NAME", f'{config["ALG_NAME"]}_{config["ENV_NAME"]}'),
+        config=config,
+        mode=config["WANDB_MODE"],
+    )
+
+    rng = jax.random.PRNGKey(config["SEED"])
+
+    t0 = time.time()
+    rngs = jax.random.split(rng, config["NUM_SEEDS"])
+    # Train
+    train_fn = {
+        "ant": functools.partial(
+            sac.train,
+            num_timesteps=config["TIMESTEPS"],
+            num_evals=config["NUM_EVALS"],
+            reward_scaling=config["REWARD_SCALING"],
+            episode_length=config["EPISODE_LENGTH"],
+            normalize_observations=config["NORMALIZE_OBSERVATIONS"],
+            action_repeat=config["ACTION_REPEAT"],
+            discounting=config["DISCOUNTING"],
+            learning_rate=config["LR"],
+            num_envs=config["NUM_ENVS"],
+            batch_size=config["BATCH_SIZE"],
+            grad_updates_per_step=config["GRAD_UPDATES_PER_STEP"],
+            max_devices_per_host=config["MAX_DEVICES_PER_HOST"],
+            max_replay_size=config["MAX_REPLAY_SIZE"],
+            min_replay_size=config["MIN_REPLAY_SIZE"],
+            seed=config["SEED"],
+        ),
+    }[env_name]
+    make_inference_fn, params, metrics = train_fn(environment=env, progress_fn=progress)
+    print(f"Took {time.time() - t0} seconds to complete.")
+
+
+@hydra.main(version_base=None, config_path="./config", config_name="config")
+def main(config):
+    config = OmegaConf.to_container(config)
+    print("Config:\n", OmegaConf.to_yaml(config))
+    single_run(config)
+
+
+if __name__ == "__main__":
+    main()
