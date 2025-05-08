@@ -271,17 +271,17 @@ def progress(num_steps, metrics):
     wandb.log(metrics, step=num_steps)
 
 def modify_env_properties(env, env_name: str, mass_factor=1.0, friction_factor=1.0):
-    sys = env.unwrapped.sys
+    config = env.unwrapped.sys.config
     # Update mass for all bodies
-    for body in sys.bodies:
+    for body in config.bodies:
         body.mass *= mass_factor
 
     # Update friction for all colliders
-    for collider in sys.colliders:
+    for collider in config.colliders:
         collider.friction *= friction_factor
 
     # Reinitialize the environment with the modified config
-    return envs.create(env_name=env_name, sys=sys)
+    return envs.create(env_name=env_name, config=config)
 
 def single_run(config):
     config = {**config, **config["alg"]}
