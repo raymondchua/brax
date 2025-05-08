@@ -270,18 +270,18 @@ def progress(num_steps, metrics):
     # Optionally, you can add logic to save or visualize metrics here.
     wandb.log(metrics, step=num_steps)
 
-def modify_env_properties(env, mass_factor=1.0, friction_factor=1.0):
-    config = env.sys
+def modify_env_properties(env, env_name: str, mass_factor=1.0, friction_factor=1.0):
+    sys = env.unwrapped.sys
     # Update mass for all bodies
-    for body in config.bodies:
+    for body in sys.bodies:
         body.mass *= mass_factor
 
     # Update friction for all colliders
-    for collider in config.colliders:
+    for collider in sys.colliders:
         collider.friction *= friction_factor
 
     # Reinitialize the environment with the modified config
-    return envs.create(env_name="ant", config=config)
+    return envs.create(env_name=env_name, sys=sys)
 
 def single_run(config):
     config = {**config, **config["alg"]}
@@ -311,7 +311,7 @@ def single_run(config):
     backend = "positional"  # @param ['generalized', 'positional', 'spring']
 
     env = envs.get_environment(env_name=env_name, backend=backend)
-    env = modify_env_properties(env, mass_factor=config["MASS_FACTOR"], friction_factor=config["FRICTION_FACTOR"])
+    env = modify_env_properties(env, env_name=env_name, mass_factor=config["MASS_FACTOR"], friction_factor=config["FRICTION_FACTOR"])
     state = jax.jit(env.reset)(rng=jax.random.PRNGKey(seed=0))
 
     # Train
