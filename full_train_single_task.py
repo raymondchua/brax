@@ -271,7 +271,7 @@ def progress(num_steps, metrics):
     wandb.log(metrics, step=num_steps)
 
 def modify_env_properties(env, mass_factor=1.0, friction_factor=1.0):
-    config = env.sys.config
+    config = env.sys
     # Update mass for all bodies
     for body in config.bodies:
         body.mass *= mass_factor
