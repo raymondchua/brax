@@ -263,20 +263,25 @@ from brax import envs
 from brax.io import model
 from brax.training.agents.sac import train as sac
 
-env_name = "ant"  # @param ['ant', 'halfcheetah', 'hopper', 'humanoid', 'humanoidstandup', 'inverted_pendulum', 'inverted_double_pendulum', 'pusher', 'reacher', 'walker2d']
-backend = "positional"  # @param ['generalized', 'positional', 'spring']
-
-env = envs.get_environment(env_name=env_name, backend=backend)
-state = jax.jit(env.reset)(rng=jax.random.PRNGKey(seed=0))
-
-
-
 def progress(num_steps, metrics):
     print("Steps:", num_steps)
     for key, value in metrics.items():
         print(f"{key}: {value}")
     # Optionally, you can add logic to save or visualize metrics here.
     wandb.log(metrics, step=num_steps)
+
+def modify_env_properties(env, mass_factor=1.0, friction_factor=1.0):
+    config = env.sys.config
+    # Update mass for all bodies
+    for body in config.bodies:
+        body.mass *= mass_factor
+
+    # Update friction for all colliders
+    for collider in config.colliders:
+        collider.friction *= friction_factor
+
+    # Reinitialize the environment with the modified config
+    return envs.create(env_name="ant", config=config)
 
 def single_run(config):
     config = {**config, **config["alg"]}
@@ -301,6 +306,14 @@ def single_run(config):
 
     t0 = time.time()
     rngs = jax.random.split(rng, config["NUM_SEEDS"])
+
+    env_name = "ant"  # @param ['ant', 'halfcheetah', 'hopper', 'humanoid', 'humanoidstandup', 'inverted_pendulum', 'inverted_double_pendulum', 'pusher', 'reacher', 'walker2d']
+    backend = "positional"  # @param ['generalized', 'positional', 'spring']
+
+    env = envs.get_environment(env_name=env_name, backend=backend)
+    env = modify_env_properties(env, mass_factor=config["MASS_FACTOR"], friction_factor=config["FRICTION_FACTOR"])
+    state = jax.jit(env.reset)(rng=jax.random.PRNGKey(seed=0))
+
     # Train
     train_fn = {
         "ant": functools.partial(
@@ -322,7 +335,12 @@ def single_run(config):
             seed=config["SEED"],
         ),
     }[env_name]
+
     make_inference_fn, params, metrics = train_fn(environment=env, progress_fn=progress)
+
+
+
+
     print(f"Took {time.time() - t0} seconds to complete.")
 
 
