@@ -257,6 +257,11 @@ import matplotlib.pyplot as plt
 import brax
 import time
 from omegaconf import OmegaConf
+from brax.envs import ant
+from brax import base
+import google.protobuf.text_format
+from brax import system
+
 
 import flax
 from brax import envs
@@ -271,18 +276,21 @@ def progress(num_steps, metrics):
     wandb.log(metrics, step=num_steps)
 
 def modify_env_properties(env, env_name: str, mass_factor=1.0, friction_factor=1.0):
-    sys = env.unwrapped.sys
-    config = sys.config
-    # Update mass for all bodies
-    for body in config.bodies:
-        body.mass *= mass_factor
 
-    # Update friction for all colliders
-    for collider in config.colliders:
-        collider.friction *= friction_factor
+    ant_config = ant._SYSTEM_CONFIG
+    config_pb = base.Config()
+    google.protobuf.text_format.Parse(ant_config, config_pb)
 
-    # Reinitialize the environment with the modified config
-    return envs.create(env_name=env_name, config=config)
+    # Modify body mass or friction
+    for body in config_pb.bodies:
+        body.mass_factor *= mass_factor
+
+    for geom in config_pb.geoms:
+        geom.friction *= friction_factor
+
+    sys = system.System(config_pb)
+
+    return ant.Ant(sys=sys)
 
 def single_run(config):
     config = {**config, **config["alg"]}
